@@ -191,8 +191,8 @@ auto traffic_graph::_pre_process_short(const unordered_set<size_t> & _short_inde
     decltype(dataset_short) short_pre_norm_feature = dataset_short;
     scale_short.Transform(short_pre_norm_feature, dataset_short);
     
-    mlpack::dbscan::DBSCAN<> k_short(us, vs);
-    k_short.Cluster<arma::mat>(dataset_short, assignments_short, centroids_short);
+    mlpack::DBSCAN<> k_short(us, vs);
+    k_short.Cluster(dataset_short, assignments_short, centroids_short);
 
 
 #ifdef DISP_PRE_CLUSTER_SHORT
@@ -245,8 +245,8 @@ auto traffic_graph::_pre_process_long(const unordered_set<size_t> & _long_index,
     
 
     // mlpack::dbscan::DBSCAN<> k_long(0.2, 20);
-    mlpack::dbscan::DBSCAN<> k_long(ul, vl);
-    k_long.Cluster<arma::mat>(dataset_long, assignments_long, centroids_long);
+    mlpack::DBSCAN<> k_long(ul, vl);
+    k_long.Cluster(dataset_long, assignments_long, centroids_long);
 
 
 #ifdef DISP_PRE_CLUSTER_LONG

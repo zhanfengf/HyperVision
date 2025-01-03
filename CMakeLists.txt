@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 project(HyperVision)
-set(CMAKE_CXX_STANDARD 14)
+
+set(CMAKE_CXX_STANDARD 17)
+include_directories(/opt/homebrew/include)
+link_directories(/opt/homebrew/lib)
+link_directories(/opt/homebrew/Cellar/pcapplusplus/24.09/lib)
 
 add_subdirectory(flow_construct)
 add_subdirectory(dataset_construct)
