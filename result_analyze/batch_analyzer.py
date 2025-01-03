@@ -8,7 +8,7 @@ from common import *
 import multiprocessing as mp
 
 
-def analyze_thread_template(task:str) -> None:
+def analyze_thread_template(task:str, args) -> None:
     logging.info(f"Start to analyze {task}")
     if not os.path.exists(f'./log/{args.group}'):
         os.mkdir(f"./log/{args.group}")
@@ -18,11 +18,11 @@ def analyze_thread_template(task:str) -> None:
 
 
 @time_log
-@call_log("Start bacth analyzing.")
+@call_log("Start batch analyzing.")
 def analyze_group() -> None:
     pl = []
     for ts in task_list:
-        pl.append(mp.Process(target=analyze_thread_template, args=(ts,)))
+        pl.append(mp.Process(target=analyze_thread_template, args=(ts,args)))
     
     [p.start() for p in pl]
     [p.join() for p in pl]
