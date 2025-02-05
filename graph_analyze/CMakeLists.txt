@@ -15,3 +15,7 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME} z3)
+
+find_package(PcapPlusPlus REQUIRED)
+
+target_link_libraries(${PROJECT_NAME} PcapPlusPlus::Pcap++)
