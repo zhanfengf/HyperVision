@@ -1,7 +1,5 @@
 {
-    "use_pcap2": "../2021-08-19-redline.pcap",
-    "use_pcap3": "../2021-09-14-agenttesla.pcap",
-    "use_pcap": "../2025-01-28-web-inject-and-malware-infection.pcap",
+    "use_pcap": "pcap.pcap",
     "dataset_construct": {
         "data_path": "../data/charrdos.data",
         "label_path": "../data/charrdos.label",
