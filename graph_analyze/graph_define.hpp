@@ -10,7 +10,11 @@
 #include <mlpack/methods/kmeans/kmeans.hpp>
 #include <mlpack/methods/dbscan/dbscan.hpp>
 #include <mlpack/core/data/scaler_methods/min_max_scaler.hpp>
+#if __has_include(<mlpack/core/distances/lmetric.hpp>)
 #include <mlpack/core/distances/lmetric.hpp>
+#else
+#include <mlpack/core/metrics/lmetric.hpp>
+#endif
 
 #include <z3++.h>
 

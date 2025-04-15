@@ -8,7 +8,11 @@
 #include <pcapplusplus/SystemUtils.h>
 #include <pcapplusplus/TcpLayer.h>
 #include <pcapplusplus/UdpLayer.h>
+#if __has_include(<pcapplusplus/IpLayer.h>)
 #include <pcapplusplus/IpLayer.h>
+#else
+#include <pcapplusplus/IPLayer.h>
+#endif
 
 
 namespace Hypervision

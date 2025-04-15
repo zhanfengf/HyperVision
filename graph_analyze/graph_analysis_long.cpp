@@ -173,11 +173,19 @@ void traffic_graph::_process_long(const unordered_set<size_t> & _long_index,
 
         arma::mat _centroids_long;
         arma::Row<size_t> _assignments_long;
+#if __has_include(<mlpack/core/distances/lmetric.hpp>)
         mlpack::KMeans<> _k_long;
+#else
+        mlpack::kmeans::KMeans<> _k_long;
+#endif
 
         const auto __get_loss_long = [&_centroids_long] (const decltype(__long_data.col(0)) & _vec) -> double_t {
             double_t res = 1e10;
+#if __has_include(<mlpack/core/distances/lmetric.hpp>)
             mlpack::EuclideanDistance euclidean_eval;
+#else
+            mlpack::metric::EuclideanDistance euclidean_eval;
+#endif
             for (size_t i = 0; i < _centroids_long.n_cols; i ++) {
                 res = min(res, euclidean_eval.Evaluate(_centroids_long.col(i), _vec) );
             }

@@ -190,8 +190,11 @@ auto traffic_graph::_pre_process_short(const unordered_set<size_t> & _short_inde
     scale_short.Fit(dataset_short);
     decltype(dataset_short) short_pre_norm_feature = dataset_short;
     scale_short.Transform(short_pre_norm_feature, dataset_short);
-    
+#if __has_include(<mlpack/core/distances/lmetric.hpp>)
     mlpack::DBSCAN<> k_short(us, vs);
+#else
+    mlpack::dbscan::DBSCAN<> k_short(us, vs);
+#endif
     k_short.Cluster(dataset_short, assignments_short, centroids_short);
 
 
@@ -245,7 +248,11 @@ auto traffic_graph::_pre_process_long(const unordered_set<size_t> & _long_index,
     
 
     // mlpack::dbscan::DBSCAN<> k_long(0.2, 20);
+#if __has_include(<mlpack/core/distances/lmetric.hpp>)
     mlpack::DBSCAN<> k_long(ul, vl);
+#else
+    mlpack::dbscan::DBSCAN<> k_long(ul, vl);
+#endif
     k_long.Cluster(dataset_long, assignments_long, centroids_long);
 
 

@@ -162,12 +162,20 @@ void traffic_graph::_process_short(const unordered_set<size_t> & _short_index, c
 
     arma::mat centroids_short2;
     arma::Row<size_t> assignments_short2;
+#if __has_include(<mlpack/core/distances/lmetric.hpp>)
     mlpack::KMeans<> k_short2;
+#else
+    mlpack::kmeans::KMeans<> k_short2;
+#endif
     k_short2.Cluster(__short_data, val_K, assignments_short2, centroids_short2);
 
     const auto __get_loss = [&] (const decltype(__short_data.col(0)) & _vec) -> double {
         double_t res = HUG;
+#if __has_include(<mlpack/core/distances/lmetric.hpp>)
         mlpack::EuclideanDistance euclidean_eval;
+#else
+        mlpack::metric::EuclideanDistance euclidean_eval;
+#endif
         for (size_t i = 0; i < centroids_short2.n_cols; i ++) {
             res = min(res, euclidean_eval.Evaluate(centroids_short2.col(i), _vec) );
         }

@@ -273,12 +273,20 @@ auto traffic_graph::component_select(const shared_ptr<component> p_com) const ->
     arma::mat centroids_cp;
     arma::Row<size_t> assignments_cp;
     
+#if __has_include(<mlpack/core/distances/lmetric.hpp>)
     mlpack::DBSCAN<> k_cp(uc, vc);
+#else
+    mlpack::dbscan::DBSCAN<> k_cp(uc, vc);
+#endif
     k_cp.Cluster(cp_f_mat, assignments_cp, centroids_cp);
 
     const auto __get_loss_cp = [&centroids_cp] (const decltype(cp_f_mat.col(0)) & _vec) -> double_t {
         double_t res = HUG;
+#if __has_include(<mlpack/core/distances/lmetric.hpp>)
         mlpack::EuclideanDistance euclidean_eval;
+#else
+        mlpack::metric::EuclideanDistance euclidean_eval;
+#endif
         for (size_t i = 0; i < centroids_cp.n_cols; i ++) {
             res = min(res, euclidean_eval.Evaluate(centroids_cp.col(i), _vec) );
         }
