@@ -4,6 +4,35 @@
 using namespace Hypervision;
 
 
+void _export_to_short_csv(const arma::mat & data, const arma::Row<size_t> & assignments, 
+                          const arma::mat & centroids, vector<double_t> loss, const std::string & filename, vector<size_t> origin) {
+    std::ofstream file(filename, std::ios::app);
+    if (!file.is_open()) {
+        std::cerr << "Error opening file for writing!" << std::endl;
+        return;
+    }
+
+    // Write header
+    // file << "EdgeID,ClusterID,Loss";
+    // for (size_t j = 0; j < data.n_rows; j++) {
+    //     file << ",Feature_" << j;  // Feature columns
+    // }
+    // file << "\n";
+
+    // Write edge feature data & cluster assignments
+    for (size_t i = 0; i < data.n_cols; i++) {
+        file << origin[i] << "," << assignments[i] << "," << loss[i];  // TODO: offset_s
+        for (size_t j = 0; j < data.n_rows; j++) {
+            file << "," << std::setprecision(6) << data(j, i);  // Feature values
+        }
+        file << "\n";
+    }
+
+    file.close();
+    std::cout << "Clustering data exported to: " << filename << std::endl;
+}
+
+
 void traffic_graph::_process_short(const unordered_set<size_t> & _short_index, const arma::mat & dataset_short,
                                    const arma::mat & centroids_short, const arma::Row<size_t> & assignments_short) {
 
@@ -195,6 +224,7 @@ void traffic_graph::_process_short(const unordered_set<size_t> & _short_index, c
             - cs * short_cluster_time_range[i]
         );
     }
+    _export_to_short_csv(__short_data, assignments_short2, centroids_short2, loss_short_vec, "short.csv", short_origin_index);
 
 #ifdef SHORT_RESULT_PRINT
     vector<pair<size_t, double> > res_mp;

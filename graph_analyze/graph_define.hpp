@@ -134,6 +134,7 @@ public:
     auto proc_components(const shared_ptr<component> p_com) -> void;
 
     auto get_final_pkt_score(const shared_ptr<binary_label_t> p_label) -> const decltype(p_pkt_score);
+    void print_final_pkt_score(shared_ptr<vector<shared_ptr<basic_packet> > > p_parse_result);
 
     void config_via_json(const json & jin);
 

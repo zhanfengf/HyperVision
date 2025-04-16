@@ -166,6 +166,7 @@ public:
         p_graph->parse_edge();
         p_graph->graph_detect();
         p_loss = p_graph->get_final_pkt_score(p_label);
+        p_graph->print_final_pkt_score(p_parse_result);
 
         std::map<tuple2_conn4, pair<int,double> > m;
         for (size_t i = 0; i < p_loss->size(); ++ i) {

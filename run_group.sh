@@ -102,13 +102,17 @@ declare -n ref=$group
 for item in ${ref[*]}
 do
     cd ..
-    rm data/*
+    # rm data/*
     echo $(date +"%Y-%m-%d %H:%M:%S") tar -xzf hypervision-dataset.tar.gz data/$item.{data,label}
     tar -xzf hypervision-dataset.tar.gz data/$item.{data,label}
     cd build
 
     echo $(date +"%Y-%m-%d %H:%M:%S") ./HyperVision -config ../configuration/$group/${item}.json
+    cp template.csv short.csv
+    cp template.csv long.csv
     ./HyperVision -config ../configuration/$group/${item}.json > ../cache/${item}.log
+    mv short.csv short-$group-$item.csv
+    mv long.csv long-$group-$item.csv
 done
 cd ../result_analyze
 ./batch_analyzer.py -g ${group%%force} # inconsistent naming of group!

@@ -3,6 +3,33 @@
 
 using namespace Hypervision;
 
+void _export_to_long_csv(const arma::mat & data, const arma::Row<size_t> & assignments, 
+                         const arma::mat & centroids, vector<double_t> loss, const std::string & filename, vector<size_t> origin) {
+    std::ofstream file(filename, std::ios::app);
+    if (!file.is_open()) {
+        std::cerr << "Error opening file for writing!" << std::endl;
+        return;
+    }
+
+    // Write header
+    // file << "EdgeID,ClusterID,Loss";
+    // for (size_t j = 0; j < data.n_rows; j++) {
+    //     file << ",Feature_" << j;  // Feature columns
+    // }
+    // file << "\n";
+
+    // Write edge feature data & cluster assignments
+    for (size_t i = 0; i < data.n_cols; i++) {
+        file << origin[i] << "," << assignments[i] << "," << loss[i]+5;  // TODO: offset_l
+        for (size_t j = 0; j < data.n_rows; j++) {
+            file << "," << std::setprecision(6) << data(j, i);  // Feature values
+        }
+        file << "\n";
+    }
+
+    file.close();
+    std::cout << "Clustering data exported to: " << filename << std::endl;
+}
 
 void traffic_graph::_process_long(const unordered_set<size_t> & _long_index,
                                 const arma::mat & centroids_long, const arma::Row<size_t> & assignments_long) {
@@ -211,6 +238,7 @@ void traffic_graph::_process_long(const unordered_set<size_t> & _long_index,
                 + log2(long_clustering_size[ref.second[i]] + 1) * bl
                 - long_cluster_time[ref.second[i]] * cl);
         }
+        _export_to_long_csv(__long_data, _assignments_long, _centroids_long, _loss_long_vec, "long.csv", long_origin_index);
 
         vector<double_t> & ve_loss = *p_long_edge_score;
         for (size_t i = 0; i < ref.second.size(); i ++) {

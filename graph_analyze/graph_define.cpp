@@ -111,6 +111,51 @@ auto traffic_graph::get_final_pkt_score(const shared_ptr<binary_label_t> p_label
 }
 
 
+void coutIP(int ip) {
+    std::cout << (ip & 255) << '.'
+              << (ip >> 8 & 255) << '.'
+              << (ip >> 16 & 255) << '.'
+              << (ip >> 24 & 255);
+}
+
+
+void traffic_graph::print_final_pkt_score(shared_ptr<vector<shared_ptr<basic_packet> > > p_parse_result) {
+    for (size_t i = 0; i < p_long_edge->size(); ++ i) {
+        const auto ref = p_long_edge->at(i)->get_raw_flow();
+        const auto res = p_long_edge_score->at(i) + offset_l;
+        if (res > 11) {
+            for (const auto index: *ref->get_p_reverse_id()) {
+                auto flow_id = dynamic_pointer_cast<basic_packet4>(p_parse_result->at(index))->flow_id;
+                auto id = tuple2_conn4(tuple_get_src_addr(flow_id), tuple_get_dst_addr(flow_id));
+                std::cout << "long malicious: [" << res << "]" << ' ';
+                coutIP(tuple_get_src_addr(flow_id));
+                std::cout << " -> ";
+                coutIP(tuple_get_dst_addr(flow_id));
+                std::cout << std::endl;
+                break;
+            }
+        }
+    }
+
+    for (size_t i = 0; i < p_short_edge->size(); ++i) {
+        const auto res = p_short_edge_score->at(i) + offset_s;
+        const auto ref = p_short_edge->at(i)->get_flow_index(0);
+        if (res > 11) {
+            for (const auto index: *ref->get_p_reverse_id()) {
+                auto flow_id = dynamic_pointer_cast<basic_packet4>(p_parse_result->at(index))->flow_id;
+                auto id = tuple2_conn4(tuple_get_src_addr(flow_id), tuple_get_dst_addr(flow_id));
+                std::cout << "short malicious: [" << i << ":" << res << "]" << ' ';
+                coutIP(tuple_get_src_addr(flow_id));
+                std::cout << " -> ";
+                coutIP(tuple_get_dst_addr(flow_id));
+                std::cout << std::endl;
+                break;
+            }
+        }
+    }
+}
+
+
 void traffic_graph::config_via_json(const json & jin) {
     try {
         if (jin.count("uc")) {
