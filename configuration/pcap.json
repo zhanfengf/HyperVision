@@ -38,6 +38,6 @@
     },
     "result_save": {
         "save_result_enable": true,
-        "save_result_path": "../temp/charrdos.txt"
+        "save_result_path": "../temp/pcap.txt"
     }
 }

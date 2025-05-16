@@ -8,7 +8,55 @@ void traffic_graph::hkuspace_export_components(const shared_ptr<vector<shared_pt
                                                const shared_ptr<vector<shared_ptr<long_edge>>> p_long_edges,
                                                const shared_ptr<binary_label_t> p_label,
                                                const std::string & filename) {
+    const auto _f_extract_feature_component = [&] (const component::value_type & cp) -> feature_t {
+        unordered_set<size_t> _long_index, _short_index, _short_agg_index;
+        for (const addr_t addr: cp) {
+            if (long_edge_out.count(addr)){
+                const auto & __index_ls = long_edge_out.at(addr);
+                _long_index.insert(cbegin(__index_ls), cend(__index_ls));
+            }
+            if (short_edge_out.count(addr)){
+                const auto & __index_ls = short_edge_out.at(addr);
+                _short_index.insert(cbegin(__index_ls), cend(__index_ls));
+            }
+            if (short_edge_out_agg.count(addr)){
+                const auto & __index_ls = short_edge_out_agg.at(addr);
+                _short_index.insert(cbegin(__index_ls), cend(__index_ls));
+                _short_agg_index.insert(cbegin(__index_ls), cend(__index_ls));
+            }
+            if (short_edge_in_agg.count(addr)){
+                const auto & __index_ls = short_edge_in_agg.at(addr);
+                _short_index.insert(cbegin(__index_ls), cend(__index_ls));
+                _short_agg_index.insert(cbegin(__index_ls), cend(__index_ls));
+            }
+        }
+        size_t byte_ctr_long = 0, byte_ctr_short = 0;
+        for (const size_t idx: _long_index) {
+            const auto db_ref = p_long_edge->at(idx)->get_length_distribution();
+            for (const auto & ref: *db_ref) {
+                byte_ctr_long += ref.second;
+            }
+        }
+        for (const size_t idx: _short_index) {
+            const auto pk_ref = p_short_edge->at(idx)->get_flow_index(0);
+            const auto edge_size = p_short_edge->at(idx)->get_agg_size();
+            size_t acc = 0;
+            for (const auto p_p: *pk_ref->get_p_packet_p_seq()) {
+                acc += p_p->len;
+            }
+            byte_ctr_short += acc * edge_size;
+        }
+        return {
+            (double) cp.size(),
+            (double) _long_index.size(),
+            (double) _short_index.size(),
+            (double) _short_agg_index.size(),
+            (double) byte_ctr_long,
+            (double) byte_ctr_short
+        };
+    };
     shared_ptr<component> components = connected_component();
+    const auto p_select = component_select(components);
     std::ofstream file(filename, std::ios::out);
     if (!file.is_open()) {
         std::cerr << "Error opening file for writing!" << std::endl;
@@ -16,7 +64,7 @@ void traffic_graph::hkuspace_export_components(const shared_ptr<vector<shared_pt
     }
 
     // Write CSV header
-    file << "ComponentID,NumVertices,MaliciousRatio,Addresses\n";
+    file << "ComponentID,selected,NumVertices,MaliciousCount,LongEdges,ShortEdges,ShortAggEdges,BytesLong,BytesShort\n";
 
     // Iterate over components
     for (size_t i = 0; i < components->size(); ++i) {
@@ -58,14 +106,28 @@ void traffic_graph::hkuspace_export_components(const shared_ptr<vector<shared_pt
         // Compute malicious ratio
         double malicious_ratio = (total_packets > 0) ? ((double)malicious_packets / total_packets) : 0.0;
 
-        // Write component data to CSV
-        file << i << "," << comp.size() << "," << malicious_ratio << ",";
-
-        // List addresses within the component
-        for (size_t j = 0; j < comp.size(); ++j) {
-            file << comp[j];
-            if (j < comp.size() - 1) file << ";";
+        int selected = 0;
+        for (const auto index: *p_select) {
+            if (index == i) {
+                selected = 1;
+                break;
+            }
         }
+        if (selected) {
+            std::cout << "Component " << i << " has " << malicious_packets << " malicious packets" << std::endl;
+        }
+        // Write component data to CSV
+        file << i << "," << selected << "," << comp.size() << "," << malicious_packets << ",";
+        feature_t features = _f_extract_feature_component(comp);
+
+        // Write component data to CSV
+        file << features[1] << "," << features[2] << "," << features[3] << ","
+             << features[4] << "," << features[5];
+        // List addresses within the component
+        // for (size_t j = 0; j < comp.size(); ++j) {
+            // file << comp[j];
+            // if (j < comp.size() - 1) file << ";";
+        // }
 
         file << "\n";
     }
