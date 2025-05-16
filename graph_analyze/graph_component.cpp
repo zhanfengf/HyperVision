@@ -4,6 +4,76 @@
 using namespace Hypervision;
 
 
+void traffic_graph::hkuspace_export_components(const shared_ptr<vector<shared_ptr<short_edge>>> p_short_edges,
+                                               const shared_ptr<vector<shared_ptr<long_edge>>> p_long_edges,
+                                               const shared_ptr<binary_label_t> p_label,
+                                               const std::string & filename) {
+    shared_ptr<component> components = connected_component();
+    std::ofstream file(filename, std::ios::out);
+    if (!file.is_open()) {
+        std::cerr << "Error opening file for writing!" << std::endl;
+        return;
+    }
+
+    // Write CSV header
+    file << "ComponentID,NumVertices,MaliciousRatio,Addresses\n";
+
+    // Iterate over components
+    for (size_t i = 0; i < components->size(); ++i) {
+        const auto& comp = (*components)[i];
+        size_t malicious_packets = 0, total_packets = 0;
+
+        // Track flows associated with component addresses
+        std::unordered_set<shared_ptr<basic_flow>> relevant_flows;
+
+        for (const auto& addr : comp) {
+            // Check long edges for flows linked to component addresses
+            if (long_edge_out.count(addr)) {
+                for (const auto& edge_idx : long_edge_out.at(addr)) {
+                    relevant_flows.insert(p_long_edges->at(edge_idx)->get_raw_flow());
+                }
+            }
+            // Check short edges for flows linked to component addresses
+            if (short_edge_out.count(addr)) {
+                for (const auto& edge_idx : short_edge_out.at(addr)) {
+                    for (size_t j = 0; j < p_short_edges->at(edge_idx)->get_agg_size(); ++ j) {
+                        relevant_flows.insert(p_short_edges->at(edge_idx)->get_flow_index(j));
+                    }
+                }
+            }
+        }
+
+        // Scan packets in relevant flows to determine malicious ratio
+        for (const auto& flow : relevant_flows) {
+            for (const auto& packet_idx : *flow->get_p_reverse_id()) {
+                if (packet_idx < p_label->size()) {
+                    total_packets++;
+                    if (p_label->at(packet_idx)) {
+                        malicious_packets++;
+                    }
+                }
+            }
+        }
+
+        // Compute malicious ratio
+        double malicious_ratio = (total_packets > 0) ? ((double)malicious_packets / total_packets) : 0.0;
+
+        // Write component data to CSV
+        file << i << "," << comp.size() << "," << malicious_ratio << ",";
+
+        // List addresses within the component
+        for (size_t j = 0; j < comp.size(); ++j) {
+            file << comp[j];
+            if (j < comp.size() - 1) file << ";";
+        }
+
+        file << "\n";
+    }
+
+    file.close();
+    std::cout << "Components successfully exported to: " << filename << std::endl;
+}
+
 auto traffic_graph::connected_component() const -> shared_ptr<component> {
     __START_FTIMMER__
     LOGF("Detect strong connected conponents.");

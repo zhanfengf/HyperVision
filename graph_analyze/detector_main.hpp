@@ -165,6 +165,7 @@ public:
         p_graph->config_via_json(jin_main["graph_analyze"]);
         p_graph->parse_edge();
         p_graph->graph_detect();
+        p_graph->hkuspace_export_components(p_short_edges, p_long_edges, p_label, "hkuspace_components.csv");
         p_loss = p_graph->get_final_pkt_score(p_label);
         p_graph->print_final_pkt_score(p_parse_result);
 
