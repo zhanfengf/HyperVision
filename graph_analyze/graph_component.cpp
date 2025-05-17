@@ -4,9 +4,7 @@
 using namespace Hypervision;
 
 
-void traffic_graph::hkuspace_export_components(const shared_ptr<vector<shared_ptr<short_edge>>> p_short_edges,
-                                               const shared_ptr<vector<shared_ptr<long_edge>>> p_long_edges,
-                                               const shared_ptr<binary_label_t> p_label,
+void traffic_graph::hkuspace_export_components(const shared_ptr<binary_label_t> p_label,
                                                const std::string & filename) {
     const auto _f_extract_feature_component = [&] (const component::value_type & cp) -> feature_t {
         unordered_set<size_t> _long_index, _short_index, _short_agg_index;
@@ -64,9 +62,10 @@ void traffic_graph::hkuspace_export_components(const shared_ptr<vector<shared_pt
     }
 
     // Write CSV header
-    file << "ComponentID,selected,NumVertices,MaliciousCount,LongEdges,ShortEdges,ShortAggEdges,BytesLong,BytesShort\n";
+    file << "ComponentID,Selected,NumVertices,MaliciousCount,LongEdges,ShortEdges,ShortAggEdges,BytesLong,BytesShort\n";
 
     // Iterate over components
+    int missed_malicious_packets = 0;
     for (size_t i = 0; i < components->size(); ++i) {
         const auto& comp = (*components)[i];
         size_t malicious_packets = 0, total_packets = 0;
@@ -78,14 +77,26 @@ void traffic_graph::hkuspace_export_components(const shared_ptr<vector<shared_pt
             // Check long edges for flows linked to component addresses
             if (long_edge_out.count(addr)) {
                 for (const auto& edge_idx : long_edge_out.at(addr)) {
-                    relevant_flows.insert(p_long_edges->at(edge_idx)->get_raw_flow());
+                    relevant_flows.insert(p_long_edge->at(edge_idx)->get_raw_flow());
+                }
+            }
+            if (long_edge_in.count(addr)) {
+                for (const auto& edge_idx : long_edge_in.at(addr)) {
+                    relevant_flows.insert(p_long_edge->at(edge_idx)->get_raw_flow());
                 }
             }
             // Check short edges for flows linked to component addresses
             if (short_edge_out.count(addr)) {
                 for (const auto& edge_idx : short_edge_out.at(addr)) {
-                    for (size_t j = 0; j < p_short_edges->at(edge_idx)->get_agg_size(); ++ j) {
-                        relevant_flows.insert(p_short_edges->at(edge_idx)->get_flow_index(j));
+                    for (size_t j = 0; j < p_short_edge->at(edge_idx)->get_agg_size(); ++ j) {
+                        relevant_flows.insert(p_short_edge->at(edge_idx)->get_flow_index(j));
+                    }
+                }
+            }
+            if (short_edge_in.count(addr)) {
+                for (const auto& edge_idx : short_edge_in.at(addr)) {
+                    for (size_t j = 0; j < p_short_edge->at(edge_idx)->get_agg_size(); ++ j) {
+                        relevant_flows.insert(p_short_edge->at(edge_idx)->get_flow_index(j));
                     }
                 }
             }
@@ -115,6 +126,8 @@ void traffic_graph::hkuspace_export_components(const shared_ptr<vector<shared_pt
         }
         if (selected) {
             std::cout << "Component " << i << " has " << malicious_packets << " malicious packets" << std::endl;
+        } else {
+            missed_malicious_packets += malicious_packets;
         }
         // Write component data to CSV
         file << i << "," << selected << "," << comp.size() << "," << malicious_packets << ",";
@@ -131,7 +144,7 @@ void traffic_graph::hkuspace_export_components(const shared_ptr<vector<shared_pt
 
         file << "\n";
     }
-
+    std::cout << "Missed " << missed_malicious_packets << " malicious packets" << std::endl;
     file.close();
     std::cout << "Components successfully exported to: " << filename << std::endl;
 }

@@ -238,7 +238,7 @@ void traffic_graph::_process_long(const unordered_set<size_t> & _long_index,
                 + log2(long_clustering_size[ref.second[i]] + 1) * bl
                 - long_cluster_time[ref.second[i]] * cl);
         }
-        _export_to_long_csv(__long_data, _assignments_long, _centroids_long, _loss_long_vec, "long.csv", long_origin_index);
+        // _export_to_long_csv(__long_data, _assignments_long, _centroids_long, _loss_long_vec, "long.csv", long_origin_index);
 
         vector<double_t> & ve_loss = *p_long_edge_score;
         for (size_t i = 0; i < ref.second.size(); i ++) {

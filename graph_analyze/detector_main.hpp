@@ -165,7 +165,7 @@ public:
         p_graph->config_via_json(jin_main["graph_analyze"]);
         p_graph->parse_edge();
         p_graph->graph_detect();
-        p_graph->hkuspace_export_components(p_short_edges, p_long_edges, p_label, "hkuspace_components.csv");
+        p_graph->hkuspace_export_components(p_label, "hkuspace_components.csv");
         p_loss = p_graph->get_final_pkt_score(p_label);
         p_graph->print_final_pkt_score(p_parse_result);
 
@@ -200,6 +200,7 @@ public:
                 p_parse_result->push_back(result->at(i));
             }
             fill_n(back_inserter(*p_label), p_parse_result->size(), true);
+            std::cout << "Parsed " << result->size() << " malicious packets" << std::endl;
         } else if (jin_main.count("live_capture_device_by_ip")) {
             useBenignBackground();
             std::string interfaceIPAddr = jin_main["live_capture_device_by_ip"];

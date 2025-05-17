@@ -224,7 +224,7 @@ void traffic_graph::_process_short(const unordered_set<size_t> & _short_index, c
             - cs * short_cluster_time_range[i]
         );
     }
-    _export_to_short_csv(__short_data, assignments_short2, centroids_short2, loss_short_vec, "short.csv", short_origin_index);
+    // _export_to_short_csv(__short_data, assignments_short2, centroids_short2, loss_short_vec, "short.csv", short_origin_index);
 
 #ifdef SHORT_RESULT_PRINT
     vector<pair<size_t, double> > res_mp;
