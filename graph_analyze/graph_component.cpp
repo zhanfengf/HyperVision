@@ -81,6 +81,20 @@ void traffic_graph::hkuspace_export_components(const shared_ptr<binary_label_t> 
                     }
                 }
             }
+            if (short_edge_out_agg.count(addr)) {
+                for (const auto& edge_idx : short_edge_out_agg.at(addr)) {
+                    for (size_t j = 0; j < p_short_edge->at(edge_idx)->get_agg_size(); ++ j) {
+                        relevant_flows.insert(p_short_edge->at(edge_idx)->get_flow_index(j));
+                    }
+                }
+            }
+            if (short_edge_in_agg.count(addr)) {
+                for (const auto& edge_idx : short_edge_in_agg.at(addr)) {
+                    for (size_t j = 0; j < p_short_edge->at(edge_idx)->get_agg_size(); ++ j) {
+                        relevant_flows.insert(p_short_edge->at(edge_idx)->get_flow_index(j));
+                    }
+                }
+            }
         }
 
         // Scan packets in relevant flows to determine malicious ratio
