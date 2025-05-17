@@ -38,7 +38,7 @@ auto pcap_parser::parse_basic_packet_fast(size_t multiplex) -> decltype(p_parse_
         for (size_t i = _start; i < _end; i ++) {
             const auto & __p_raw_pk = (*_from).at(i);
             unique_ptr<pcpp::Packet> p_parsed_packet(
-                new pcpp::Packet(__p_raw_pk, false, pcpp::IP, pcpp::OsiModelNetworkLayer));
+                new pcpp::Packet(__p_raw_pk, false, pcpp::IPv4, pcpp::OsiModelNetworkLayer));
 
             pkt_addr4_t s4, d4;
             pkt_addr6_t s6, d6;
@@ -123,7 +123,9 @@ auto pcap_parser::parse_basic_packet_fast(size_t multiplex) -> decltype(p_parse_
             case pcpp::ICMP:
                 set_pkt_type_code(packet_code, pkt_type_t::ICMP);
                 break;
-            case pcpp::IGMP:
+            case pcpp::IGMPv1:
+            case pcpp::IGMPv2:
+            case pcpp::IGMPv3:
                 set_pkt_type_code(packet_code, pkt_type_t::IGMP);
                 break;
             default:

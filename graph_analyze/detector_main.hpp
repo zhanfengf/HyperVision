@@ -26,7 +26,7 @@ namespace Hypervision
     }
 
     shared_ptr<basic_packet4> parsePacket(pcpp::RawPacket* packet) {
-        pcpp::Packet parsedPacket(packet, false, pcpp::IP, pcpp::OsiModelNetworkLayer);
+        pcpp::Packet parsedPacket(packet, false, pcpp::IPv4, pcpp::OsiModelNetworkLayer);
         pkt_addr4_t s4, d4;
         pkt_code_t packet_code = 0;
         pkt_ts_t packet_time = packet->getPacketTimeStamp();
@@ -84,7 +84,9 @@ namespace Hypervision
         case pcpp::ICMP:
             set_pkt_type_code(packet_code, pkt_type_t::ICMP);
             break;
-        case pcpp::IGMP:
+        case pcpp::IGMPv1:
+        case pcpp::IGMPv2:
+        case pcpp::IGMPv3:
             set_pkt_type_code(packet_code, pkt_type_t::IGMP);
             break;
         default:
@@ -100,7 +102,7 @@ namespace Hypervision
         if (p == nullptr) {
             return false;
         }
-        p_parse_result->push_back(parsePacket(packet));
+        p_parse_result->push_back(p);
         if (p_parse_result->size() >= 20000000) {
             p_parse_result->erase(p_parse_result->begin(), p_parse_result->begin() + 10000000);
         }
