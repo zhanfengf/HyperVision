@@ -116,7 +116,7 @@ private:
     auto __f_trans_armadillo_mat_T(const vector<feature_t> & mx) -> arma::mat;
 
     void _acquire_edge_index(const vector<addr_t> & addr_ls, 
-                             unordered_set<size_t> & _long_index, unordered_set<size_t> & _short_index);
+                             unordered_set<size_t> & _long_index, unordered_set<size_t> & _short_index) const;
     auto _pre_process_short(const unordered_set<size_t> & _short_index,
                             arma::mat & dataset_short, arma::mat & centroids_short, arma::Row<size_t> & assignments_short) -> size_t;
     auto _pre_process_long(const unordered_set<size_t> & _long_index,

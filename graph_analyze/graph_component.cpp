@@ -8,26 +8,7 @@ void traffic_graph::hkuspace_export_components(const shared_ptr<binary_label_t> 
                                                const std::string & filename) {
     const auto _f_extract_feature_component = [&] (const component::value_type & cp) -> feature_t {
         unordered_set<size_t> _long_index, _short_index, _short_agg_index;
-        for (const addr_t addr: cp) {
-            if (long_edge_out.count(addr)){
-                const auto & __index_ls = long_edge_out.at(addr);
-                _long_index.insert(cbegin(__index_ls), cend(__index_ls));
-            }
-            if (short_edge_out.count(addr)){
-                const auto & __index_ls = short_edge_out.at(addr);
-                _short_index.insert(cbegin(__index_ls), cend(__index_ls));
-            }
-            if (short_edge_out_agg.count(addr)){
-                const auto & __index_ls = short_edge_out_agg.at(addr);
-                _short_index.insert(cbegin(__index_ls), cend(__index_ls));
-                _short_agg_index.insert(cbegin(__index_ls), cend(__index_ls));
-            }
-            if (short_edge_in_agg.count(addr)){
-                const auto & __index_ls = short_edge_in_agg.at(addr);
-                _short_index.insert(cbegin(__index_ls), cend(__index_ls));
-                _short_agg_index.insert(cbegin(__index_ls), cend(__index_ls));
-            }
-        }
+        _acquire_edge_index(cp, _long_index, _short_index);
         size_t byte_ctr_long = 0, byte_ctr_short = 0;
         for (const size_t idx: _long_index) {
             const auto db_ref = p_long_edge->at(idx)->get_length_distribution();
@@ -347,26 +328,7 @@ auto traffic_graph::component_select(const shared_ptr<component> p_com) const ->
 
     const auto _f_extract_feature_component = [&] (const component::value_type & cp) -> feature_t {
         unordered_set<size_t> _long_index, _short_index, _short_agg_index;
-        for (const addr_t addr: cp) {
-            if (long_edge_out.count(addr)){
-                const auto & __index_ls = long_edge_out.at(addr);
-                _long_index.insert(cbegin(__index_ls), cend(__index_ls));
-            }
-            if (short_edge_out.count(addr)){
-                const auto & __index_ls = short_edge_out.at(addr);
-                _short_index.insert(cbegin(__index_ls), cend(__index_ls));
-            }
-            if (short_edge_out_agg.count(addr)){
-                const auto & __index_ls = short_edge_out_agg.at(addr);
-                _short_index.insert(cbegin(__index_ls), cend(__index_ls));
-                _short_agg_index.insert(cbegin(__index_ls), cend(__index_ls));
-            }
-            if (short_edge_in_agg.count(addr)){
-                const auto & __index_ls = short_edge_in_agg.at(addr);
-                _short_index.insert(cbegin(__index_ls), cend(__index_ls));
-                _short_agg_index.insert(cbegin(__index_ls), cend(__index_ls));
-            }
-        }
+        _acquire_edge_index(cp, _long_index, _short_index);
         size_t byte_ctr_long = 0, byte_ctr_short = 0;
         for (const size_t idx: _long_index) {
             const auto db_ref = p_long_edge->at(idx)->get_length_distribution();

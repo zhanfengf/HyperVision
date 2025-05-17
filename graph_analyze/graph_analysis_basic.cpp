@@ -152,7 +152,7 @@ auto traffic_graph::__f_trans_armadillo_mat_T(const vector<feature_t> & mx) -> a
 
 
 void traffic_graph::_acquire_edge_index(const vector<addr_t> & addr_ls, 
-                                        unordered_set<size_t> & _long_index, unordered_set<size_t> & _short_index) {
+                                        unordered_set<size_t> & _long_index, unordered_set<size_t> & _short_index) const {
     for (const addr_t addr: addr_ls) {
         if (long_edge_out.count(addr)){
             const auto & __index_ls = long_edge_out.at(addr);
@@ -170,6 +170,16 @@ void traffic_graph::_acquire_edge_index(const vector<addr_t> & addr_ls,
             const auto & __index_ls = short_edge_in_agg.at(addr);
             _short_index.insert(cbegin(__index_ls), cend(__index_ls));
         }
+#ifdef FIX_BUG_ACQUIRE_EDGE_INDEX
+        if (long_edge_in.count(addr)){
+            const auto & __index_ls = long_edge_in.at(addr);
+            _long_index.insert(cbegin(__index_ls), cend(__index_ls));
+        }
+        if (short_edge_in.count(addr)) {
+            const auto & __index_ls = short_edge_in.at(addr);
+            _short_index.insert(cbegin(__index_ls), cend(__index_ls));
+        }
+#endif
     }
 }
 

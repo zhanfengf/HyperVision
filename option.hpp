@@ -27,3 +27,4 @@
     #endif
 
 #endif
+#define FIX_BUG_ACQUIRE_EDGE_INDEX
