@@ -4,7 +4,7 @@
 using namespace Hypervision;
 
 
-auto traffic_graph::_proc_each_component(const vector<addr_t> & addr_ls) -> void {
+auto traffic_graph::_proc_each_component(const vector<addr_t> & addr_ls, size_t index) -> void {
 
     unordered_set<size_t> _long_index, _short_index;
     _acquire_edge_index(addr_ls, _long_index, _short_index);
@@ -15,6 +15,7 @@ auto traffic_graph::_proc_each_component(const vector<addr_t> & addr_ls) -> void
     _long_index.size() + _short_index.size(), 
     _long_index.size(), _short_index.size());
 #endif
+    std::cout << "Component " << index << std::endl;
     
 #ifdef CLUSTERING_SHORT
     if (_short_index.size() >= 1) {
@@ -45,7 +46,7 @@ auto traffic_graph::proc_components(const shared_ptr<component> p_com) -> void {
 
     const auto p_select = component_select(p_com);
     for (const auto index: *p_select) {
-        _proc_each_component(p_com->at(index));
+        _proc_each_component(p_com->at(index), index);
     }
 
     __STOP_FTIMER__

@@ -205,7 +205,7 @@ auto traffic_graph::_pre_process_short(const unordered_set<size_t> & _short_inde
 #else
     mlpack::dbscan::DBSCAN<> k_short(us, vs);
 #endif
-    k_short.Cluster(dataset_short, assignments_short, centroids_short);
+    int x = k_short.Cluster(dataset_short, assignments_short, centroids_short);
 
 
 #ifdef DISP_PRE_CLUSTER_SHORT
@@ -237,6 +237,7 @@ auto traffic_graph::_pre_process_short(const unordered_set<size_t> & _short_inde
             ret = ret > ve ? ret : ve;
         }
     }
+    std::cout << "pre_process_short " << short_feature.size() << " " << x << std::endl;
     return ret;
 }
 
@@ -263,7 +264,7 @@ auto traffic_graph::_pre_process_long(const unordered_set<size_t> & _long_index,
 #else
     mlpack::dbscan::DBSCAN<> k_long(ul, vl);
 #endif
-    k_long.Cluster(dataset_long, assignments_long, centroids_long);
+    int x = k_long.Cluster(dataset_long, assignments_long, centroids_long);
 
 
 #ifdef DISP_PRE_CLUSTER_LONG
@@ -294,6 +295,7 @@ auto traffic_graph::_pre_process_long(const unordered_set<size_t> & _long_index,
             ret = ret > ve ? ret : ve;
         }
     }
+    std::cout << "pre_process_long " << long_feature.size() << " " << x << std::endl;
     return ret;
 
 }

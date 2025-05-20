@@ -177,6 +177,7 @@ void traffic_graph::_process_short(const unordered_set<size_t> & _short_index, c
         short_cluster_time_range.push_back(res);
     }
 
+
     vector<feature_t> _short_feature;
     for (const auto index: short_origin_index) {
         _short_feature.push_back(_f_exeract_feature_short2(index));
@@ -256,6 +257,21 @@ void traffic_graph::_process_short(const unordered_set<size_t> & _short_index, c
             _vec_score_short[j] = loss_short_vec[i];
         }
     }
+    // double mx = 0;
+    // for (size_t i = 0; i < __short_data.n_cols; i ++ ) {
+    //     for (const auto j: short_origin_index_vec[i]) {
+    //         mx = max(mx, _vec_score_short[j]);
+    //     }
+    // }
+    // std::cout << "[";
+    // for (const auto v : has_counted) {
+    //     std::cout << v << " ";
+    // }
+    // std::cout << "]" << std::endl;
+    // std::cout << "All " << assignments_short.size() << " short edges ";
+    // std::cout << "are clustered into " << __short_clustering_size.size() << " edges, ";
+    // std::cout << addr_set.size() << " vertices, loss ";
+    // std::cout << mx << std::endl;
 
 }
 

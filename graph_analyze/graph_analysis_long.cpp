@@ -31,6 +31,11 @@ void _export_to_long_csv(const arma::mat & data, const arma::Row<size_t> & assig
     std::cout << "Clustering data exported to: " << filename << std::endl;
 }
 
+
+void traffic_graph::hkuspace_assert_long() {
+}
+
+
 void traffic_graph::_process_long(const unordered_set<size_t> & _long_index,
                                 const arma::mat & centroids_long, const arma::Row<size_t> & assignments_long) {
 
@@ -246,6 +251,17 @@ void traffic_graph::_process_long(const unordered_set<size_t> & _long_index,
                 ve_loss[idx] = _loss_long_vec[i];
             }
         }
+        // double mx = 0;
+        // for (size_t i = 0; i < ref.second.size(); i ++) {
+        //     for (auto idx: long_origin_index_vec[ref.second[i]]) {
+        //         mx = max(mx, ve_loss[idx]);
+        //     }
+        // }
+        // std::cout << "All " << assignments_long.size() << " long edges ";
+        // std::cout << "are clustered into " << has_counted_long.size() << " edges, ";
+        // std::cout << addr_long.size() << " vertices, ";
+        // std::cout << z3_res.size() << " critical vertices, loss ";
+        // std::cout << mx << std::endl;
 
 #ifdef LONG_RESULT_PRINT
         vector<pair<size_t, double> > long_res_mp;

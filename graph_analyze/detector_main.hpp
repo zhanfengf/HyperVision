@@ -169,24 +169,24 @@ public:
         p_graph->graph_detect();
         p_graph->hkuspace_export_components(p_label, "hkuspace_components.csv");
         p_loss = p_graph->get_final_pkt_score(p_label);
-        p_graph->print_final_pkt_score(p_parse_result);
+        // p_graph->print_final_pkt_score(p_parse_result, p_label);
 
-        std::map<tuple2_conn4, pair<int,double> > m;
-        for (size_t i = 0; i < p_loss->size(); ++ i) {
-            if (p_loss->at(i) > 11) {
-                auto flow_id = dynamic_pointer_cast<basic_packet4>(p_parse_result->at(i))->flow_id;
-                auto id = tuple2_conn4(tuple_get_src_addr(flow_id), tuple_get_dst_addr(flow_id));
-                m[id] = make_pair(m[id].first + 1, max(m[id].second, p_loss->at(i)));
-            }
-        }
-        for (auto x : m) {
-            auto flow_id = x.first;
-            std::cout << "malicious: [" << x.second.first << ":" << x.second.second << "]" << ' ';
-            coutIP(tuple_get_src_addr(flow_id));
-            std::cout << " -> ";
-            coutIP(tuple_get_dst_addr(flow_id));
-            std::cout << std::endl;
-        }
+        // std::map<tuple2_conn4, pair<int,double> > m;
+        // for (size_t i = 0; i < p_loss->size(); ++ i) {
+        //     if (p_loss->at(i) > 11) {
+        //         auto flow_id = dynamic_pointer_cast<basic_packet4>(p_parse_result->at(i))->flow_id;
+        //         auto id = tuple2_conn4(tuple_get_src_addr(flow_id), tuple_get_dst_addr(flow_id));
+        //         m[id] = make_pair(m[id].first + 1, max(m[id].second, p_loss->at(i)));
+        //     }
+        // }
+        // for (auto x : m) {
+        //     auto flow_id = x.first;
+        //     std::cout << "malicious: [" << x.second.first << ":" << x.second.second << "]" << ' ';
+        //     coutIP(tuple_get_src_addr(flow_id));
+        //     std::cout << " -> ";
+        //     coutIP(tuple_get_dst_addr(flow_id));
+        //     std::cout << std::endl;
+        // }
     }
 
     void start(void) {

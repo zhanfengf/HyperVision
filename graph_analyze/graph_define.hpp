@@ -103,6 +103,7 @@ public:
     auto connected_component() const -> shared_ptr<component>;
     void hkuspace_export_components(const shared_ptr<binary_label_t> p_label,
                                     const std::string & filename);
+    void hkuspace_assert_components(const shared_ptr<component> components);
 
     auto component_select(const shared_ptr<component> p_com) const -> shared_ptr<vector<size_t>>;
 
@@ -124,9 +125,10 @@ private:
 
     void _process_short(const unordered_set<size_t> & _short_index, 
                         const arma::mat & dataset_short, const arma::mat & centroids_short, const arma::Row<size_t> & assignments_short);
+    void hkuspace_assert_long();
     void _process_long(const unordered_set<size_t> & _long_index,
                        const arma::mat & centroids_long, const arma::Row<size_t> & assignments_long);
-    void _proc_each_component(const vector<addr_t> & addr_ls);
+    void _proc_each_component(const vector<addr_t> & addr_ls, size_t index);
 
 public:
     auto graph_detect() {
@@ -136,7 +138,7 @@ public:
     auto proc_components(const shared_ptr<component> p_com) -> void;
 
     auto get_final_pkt_score(const shared_ptr<binary_label_t> p_label) -> const decltype(p_pkt_score);
-    void print_final_pkt_score(shared_ptr<vector<shared_ptr<basic_packet> > > p_parse_result);
+    void print_final_pkt_score(shared_ptr<vector<shared_ptr<basic_packet> > > p_parse_result, const shared_ptr<binary_label_t> p_label);
 
     void config_via_json(const json & jin);
 

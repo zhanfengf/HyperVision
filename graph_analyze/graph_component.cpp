@@ -4,6 +4,51 @@
 using namespace Hypervision;
 
 
+void traffic_graph::hkuspace_assert_components(const shared_ptr<component> components) {
+    // Double check if components contains all addresses
+    std::unordered_set<addr_t> assert_pigeon;
+    for (size_t i = 0; i < components->size(); ++i) {
+        const auto& comp = (*components)[i];
+        for (const auto& addr : comp) {
+            if (assert_pigeon.count(addr)) {
+                // std::cout << "Assert pigeon component duplicated " << addr << std::endl;
+            }
+            assert_pigeon.insert(addr);
+        }
+    }
+    for (const auto& pair : long_edge_out) {
+        if (!assert_pigeon.count(pair.first)) {
+            std::cout << "Assert pigeon component missing " << pair.first << std::endl;
+        }
+    }
+    for (const auto& pair : long_edge_in) {
+        if (!assert_pigeon.count(pair.first)) {
+            std::cout << "Assert pigeon component missing " << pair.first << std::endl;
+        }
+    }
+    for (const auto& pair : short_edge_out) {
+        if (!assert_pigeon.count(pair.first)) {
+            std::cout << "Assert pigeon component missing " << pair.first << std::endl;
+        }
+    }
+    for (const auto& pair : short_edge_in) {
+        if (!assert_pigeon.count(pair.first)) {
+            std::cout << "Assert pigeon component missing " << pair.first << std::endl;
+        }
+    }
+    for (const auto& pair : short_edge_out_agg) {
+        if (!assert_pigeon.count(pair.first)) {
+            std::cout << "Assert pigeon component missing " << pair.first << std::endl;
+        }
+    }
+    for (const auto& pair : short_edge_in_agg) {
+        if (!assert_pigeon.count(pair.first)) {
+            std::cout << "Assert pigeon component missing " << pair.first << std::endl;
+        }
+    }
+}
+
+
 void traffic_graph::hkuspace_export_components(const shared_ptr<binary_label_t> p_label,
                                                const std::string & filename) {
     const auto _f_extract_feature_component = [&] (const component::value_type & cp) -> feature_t {
@@ -35,6 +80,7 @@ void traffic_graph::hkuspace_export_components(const shared_ptr<binary_label_t> 
         };
     };
     shared_ptr<component> components = connected_component();
+    hkuspace_assert_components(components);
     const auto p_select = component_select(components);
     std::ofstream file(filename, std::ios::out);
     if (!file.is_open()) {

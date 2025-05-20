@@ -85,7 +85,7 @@ auto traffic_graph::get_final_pkt_score(const shared_ptr<binary_label_t> p_label
                 if (res > p_pkt_score->at(index)) {
                     p_pkt_score->at(index) = res;
                 }
-            } 
+            }
         }
     }
 
@@ -98,6 +98,9 @@ auto traffic_graph::get_final_pkt_score(const shared_ptr<binary_label_t> p_label
     for (size_t i = 0; i < p_loss->size(); ++ i) {
         res_normal += ((double_t) !p_label->at(i)) * p_loss->at(i);
         res_abnormal += ((double_t) p_label->at(i)) * p_loss->at(i);
+        if (p_label->at(i)) {
+            // std::cout << "malicious[" << i << "] score:" << p_loss->at(i) << std::endl;
+        }
     }
     cout << res_abnormal / n_abnormal << endl;
     cout << res_normal / n_normal << endl;
@@ -111,46 +114,74 @@ auto traffic_graph::get_final_pkt_score(const shared_ptr<binary_label_t> p_label
 }
 
 
-void coutIP(int ip) {
+void coutIP(pkt_addr4_t ip) {
+    std::cout << ip << "[";
     std::cout << (ip & 255) << '.'
               << (ip >> 8 & 255) << '.'
               << (ip >> 16 & 255) << '.'
-              << (ip >> 24 & 255);
+              << (ip >> 24 & 255) << "]";
 }
 
 
-void traffic_graph::print_final_pkt_score(shared_ptr<vector<shared_ptr<basic_packet> > > p_parse_result) {
+void coutIP(pkt_addr6_t ip) {
+    auto s = uint128_2_string(ip);
+    std::cout << s;
+}
+
+
+void traffic_graph::print_final_pkt_score(shared_ptr<vector<shared_ptr<basic_packet> > > p_parse_result, const shared_ptr<binary_label_t> p_label) {
+    unordered_set<size_t> malicious_indices;
     for (size_t i = 0; i < p_long_edge->size(); ++ i) {
-        const auto ref = p_long_edge->at(i)->get_raw_flow();
         const auto res = p_long_edge_score->at(i) + offset_l;
-        if (res > 11) {
-            for (const auto index: *ref->get_p_reverse_id()) {
-                auto flow_id = dynamic_pointer_cast<basic_packet4>(p_parse_result->at(index))->flow_id;
-                auto id = tuple2_conn4(tuple_get_src_addr(flow_id), tuple_get_dst_addr(flow_id));
-                std::cout << "long malicious: [" << res << "]" << ' ';
+        if (res > 7) {
+            const auto ref = p_long_edge->at(i)->get_raw_flow();
+            const auto index = ref->get_p_reverse_id()->at(0);
+            if (!p_label->at(index)) {
+                std::cout << "wrong[" << index << "]: ";
+            } else {
+                std::cout << "correct[" << index << "]: ";
+            }
+            std::cout << "long malicious: [" << i << ":" << res << "]" << ' ';
+            auto p_rep = ref->get_p_packet_p_seq()->at(0);
+            if (typeid(*p_rep) == typeid(basic_packet4)) {
+                auto flow_id = dynamic_pointer_cast<basic_packet4>(p_rep)->flow_id;
                 coutIP(tuple_get_src_addr(flow_id));
                 std::cout << " -> ";
                 coutIP(tuple_get_dst_addr(flow_id));
-                std::cout << std::endl;
-                break;
+            } else {
+                auto flow_id = dynamic_pointer_cast<basic_packet6>(p_rep)->flow_id;
+                coutIP(tuple_get_src_addr(flow_id));
+                std::cout << " -> ";
+                coutIP(tuple_get_dst_addr(flow_id));
             }
+            std::cout << std::endl;
         }
     }
 
     for (size_t i = 0; i < p_short_edge->size(); ++i) {
         const auto res = p_short_edge_score->at(i) + offset_s;
-        const auto ref = p_short_edge->at(i)->get_flow_index(0);
-        if (res > 11) {
-            for (const auto index: *ref->get_p_reverse_id()) {
-                auto flow_id = dynamic_pointer_cast<basic_packet4>(p_parse_result->at(index))->flow_id;
-                auto id = tuple2_conn4(tuple_get_src_addr(flow_id), tuple_get_dst_addr(flow_id));
-                std::cout << "short malicious: [" << i << ":" << res << "]" << ' ';
+        if (res > 1) {
+            const auto ref = p_short_edge->at(i)->get_flow_index(0);
+            const auto index = ref->get_p_reverse_id()->at(0);
+            if (!p_label->at(index)) {
+                std::cout << "wrong[" << index << "]: ";
+            } else {
+                std::cout << "correct[" << index << "]: ";
+            }
+            std::cout << "short malicious: [" << i << ":" << ref->get_p_reverse_id()->size() << ":" << res << "]" << ' ';
+            auto p_rep = ref->get_p_packet_p_seq()->at(0);
+            if (typeid(*p_rep) == typeid(basic_packet4)) {
+                auto flow_id = dynamic_pointer_cast<basic_packet4>(p_rep)->flow_id;
                 coutIP(tuple_get_src_addr(flow_id));
                 std::cout << " -> ";
                 coutIP(tuple_get_dst_addr(flow_id));
-                std::cout << std::endl;
-                break;
+            } else {
+                auto flow_id = dynamic_pointer_cast<basic_packet6>(p_rep)->flow_id;
+                coutIP(tuple_get_src_addr(flow_id));
+                std::cout << " -> ";
+                coutIP(tuple_get_dst_addr(flow_id));
             }
+            std::cout << std::endl;
         }
     }
 }
