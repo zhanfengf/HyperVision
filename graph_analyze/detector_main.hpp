@@ -96,15 +96,28 @@ namespace Hypervision
         return make_shared<basic_packet4>(s4, d4, s_port, d_port, packet_time, packet_code, packet_length);
     }
 
+struct PacketProcessingContext {
+    shared_ptr<vector<shared_ptr<basic_packet>>> p_parse_result;
+    shared_ptr<binary_label_t> p_label;
+
+    PacketProcessingContext(shared_ptr<vector<shared_ptr<basic_packet>>> parseResult, 
+                            shared_ptr<binary_label_t> label)
+        : p_parse_result(parseResult), p_label(label) {}
+};
+
     bool onPacketArrives(pcpp::RawPacket* packet, pcpp::PcapLiveDevice* dev, void* cookie) {
-        auto p_parse_result = *static_cast<shared_ptr<vector<shared_ptr<basic_packet> > >*>(cookie);
+        auto detector = static_cast<PacketProcessingContext*>(cookie);
+        auto p_parse_result = detector->p_parse_result;
+        auto p_label = detector->p_label;
         auto p = parsePacket(packet);
         if (p == nullptr) {
             return false;
         }
         p_parse_result->push_back(p);
-        if (p_parse_result->size() >= 20000000) {
-            p_parse_result->erase(p_parse_result->begin(), p_parse_result->begin() + 10000000);
+        p_label->push_back(true);
+        if (p_parse_result->size() >= 10000000) {
+            p_parse_result->erase(p_parse_result->begin() + 5000000, p_parse_result->begin() + 7500000);
+            p_label->erase(p_label->begin() + 5000000, p_label->begin() + 7500000);
         }
         return false;
     }
@@ -140,16 +153,16 @@ public:
         p_dataset_constructor->import_dataset();
         auto label = p_dataset_constructor->get_label();
         auto result = p_dataset_constructor->get_raw_pkt();
-        for (int i = 0; i < result->size(); i++) {
+        for (int i = 0; i < 5000000; i++) {
             if (!label->at(i)) {
                 p_parse_result->push_back(result->at(i));
                 p_label->push_back(label->at(i));
             }
         }
-        std::cout << "Using " << p_parse_result->size() << " benign background" << std::endl;
+        std::cout << "Using " << 5000000 << " benign background" << std::endl;
     }
 
-    void analyze(void) {
+    void analyze() {
         LOGF("Construct flow.");
         const auto p_flow_constructor = make_shared<explicit_flow_constructor>(p_parse_result);
         p_flow_constructor->config_via_json(jin_main["flow_construct"]);
@@ -167,7 +180,8 @@ public:
         p_graph->config_via_json(jin_main["graph_analyze"]);
         p_graph->parse_edge();
         p_graph->graph_detect();
-        p_graph->hkuspace_export_components(p_label, "hkuspace_components.csv");
+        p_graph->hkuspace_export_components(p_label, "../../components/temp.csv");
+        p_graph->hkuspace_export_malicious("../../malicious/temp.csv");
         p_loss = p_graph->get_final_pkt_score(p_label);
         // p_graph->print_final_pkt_score(p_parse_result, p_label);
 
@@ -192,6 +206,7 @@ public:
     void start(void) {
         __START_FTIMMER__
 
+        std::string export_name = "hkuspace.csv";
         if (jin_main.count("use_pcap")) {
             useBenignBackground();
             const auto p_packet_parser = make_shared<pcap_parser>(jin_main["use_pcap"]);
@@ -223,7 +238,8 @@ public:
             }
             std::cout << "Start capturing..." << std::endl;
             while (true) {
-                int x = dev->startCaptureBlockingMode(onPacketArrives, &p_parse_result, 10);
+                auto c = PacketProcessingContext(p_parse_result, p_label);
+                int x = dev->startCaptureBlockingMode(onPacketArrives, &c, 10);
                 if (x < 0) {
                     // std::cout << "timeout at " << p_parse_result->size() << " packets" << std::endl;
                 } else if (x > 0) {
@@ -233,13 +249,9 @@ public:
                     break;
                 }
                 std::cout << "Captured " << p_parse_result->size() << " packets" << std::endl;
-                while (p_label->size() > p_parse_result->size()) {
-                    p_label->pop_back();
-                }
-                while (p_label->size() < p_parse_result->size()) {
-                    p_label->push_back(false);
-                }
                 analyze();
+                std::rename("../../components/temp.csv", "../../components/livecapture.csv");
+                std::rename("../../malicious/temp.csv", "../../malicious/livecapture.csv");
             }
         } else if (jin_main.count("packet_parse") &&
             jin_main["packet_parse"].count("target_file_path")) {
@@ -281,6 +293,10 @@ public:
             LOGF("Dataset not found.");
         }
         analyze();
+        if (jin_main.count("use_pcap")) {
+            std::rename("../../components/temp.csv", ("../../components/" + std::string(jin_main["use_pcap"]) + ".csv").c_str());
+            std::rename("../../malicious/temp.csv", ("../../malicious/" + std::string(jin_main["use_pcap"]) + ".csv").c_str());
+        }
 
         if (save_result_enable) {
             do_save(save_result_path);

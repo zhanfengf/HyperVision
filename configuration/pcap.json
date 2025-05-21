@@ -1,5 +1,5 @@
 {
-    "use_pcap": "pcap.pcap",
+    "use_pcap": "PCAP_FILE_NAME",
     "dataset_construct": {
         "data_path": "../data/charrdos.data",
         "label_path": "../data/charrdos.label",

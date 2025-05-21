@@ -94,6 +94,9 @@ auto traffic_graph::get_final_pkt_score(const shared_ptr<binary_label_t> p_label
     double_t res_abnormal = 0.0;
     double_t res_normal = 0.0;
     size_t n_abnormal = count(p_label->begin(), p_label->end(), true);
+    if (n_abnormal == 0) {
+        n_abnormal = 1;
+    }
     size_t n_normal = p_label->size() - n_abnormal;
     for (size_t i = 0; i < p_loss->size(); ++ i) {
         res_normal += ((double_t) !p_label->at(i)) * p_loss->at(i);
@@ -126,6 +129,67 @@ void coutIP(pkt_addr4_t ip) {
 void coutIP(pkt_addr6_t ip) {
     auto s = uint128_2_string(ip);
     std::cout << s;
+}
+
+
+void traffic_graph::hkuspace_export_malicious(const std::string & filename) {
+    std::ofstream file(filename, std::ios::out);
+    if (!file.is_open()) {
+        std::cerr << "Error opening file for writing!" << std::endl;
+        return;
+    }
+
+    // Write CSV header
+    file << "SrcAddr,DstAddr,Loss\n";
+
+    std::unordered_map<std::string, double_t> highest_loss_map;
+    for (size_t i = 0; i < p_long_edge->size(); ++ i) {
+        const auto res = p_long_edge_score->at(i) + offset_l;
+        if (res > 7) {
+            const auto ref = p_long_edge->at(i)->get_raw_flow();
+            auto p_rep = ref->get_p_packet_p_seq()->at(0);
+            std::string src, dst;
+            if (typeid(*p_rep) == typeid(basic_packet4)) {
+                auto flow_id = dynamic_pointer_cast<basic_packet4>(p_rep)->flow_id;
+                src = std::to_string(tuple_get_src_addr(flow_id));
+                dst = std::to_string(tuple_get_dst_addr(flow_id));
+            } else {
+                auto flow_id = dynamic_pointer_cast<basic_packet6>(p_rep)->flow_id;
+                src = uint128_2_string(tuple_get_src_addr(flow_id));
+                dst = uint128_2_string(tuple_get_dst_addr(flow_id));
+            }
+            std::string key = src + "," + dst;
+            if (highest_loss_map.find(key) == highest_loss_map.end() || highest_loss_map[key] < res) {
+                highest_loss_map[key] = res;
+            }
+        }
+    }
+
+    for (size_t i = 0; i < p_short_edge->size(); ++i) {
+        const auto res = p_short_edge_score->at(i) + offset_s;
+        if (res > 1) {
+            const auto ref = p_short_edge->at(i)->get_flow_index(0);
+            auto p_rep = ref->get_p_packet_p_seq()->at(0);
+            std::string src, dst;
+            if (typeid(*p_rep) == typeid(basic_packet4)) {
+                auto flow_id = dynamic_pointer_cast<basic_packet4>(p_rep)->flow_id;
+                src = std::to_string(tuple_get_src_addr(flow_id));
+                dst = std::to_string(tuple_get_dst_addr(flow_id));
+            } else {
+                auto flow_id = dynamic_pointer_cast<basic_packet6>(p_rep)->flow_id;
+                src = uint128_2_string(tuple_get_src_addr(flow_id));
+                dst = uint128_2_string(tuple_get_dst_addr(flow_id));
+            }
+            std::string key = src + "," + dst;
+            if (highest_loss_map.find(key) == highest_loss_map.end() || highest_loss_map[key] < res) {
+                highest_loss_map[key] = res;
+            }
+        }
+    }
+    for (const auto& [key, loss] : highest_loss_map) {
+        file << key << "," << loss << std::endl;
+    }
+    file.close();
 }
 
 
