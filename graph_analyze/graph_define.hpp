@@ -103,7 +103,8 @@ public:
     auto connected_component() const -> shared_ptr<component>;
     void hkuspace_export_components(const shared_ptr<binary_label_t> p_label,
                                     const std::string & filename);
-    void hkuspace_export_malicious(const std::string & filename);
+    void hkuspace_export_malicious(const shared_ptr<binary_label_t> p_label,
+                                   const std::string & filename);
     void hkuspace_assert_components(const shared_ptr<component> components);
 
     auto component_select(const shared_ptr<component> p_com) const -> shared_ptr<vector<size_t>>;

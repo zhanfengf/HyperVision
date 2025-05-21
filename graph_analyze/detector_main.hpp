@@ -181,7 +181,7 @@ public:
         p_graph->parse_edge();
         p_graph->graph_detect();
         p_graph->hkuspace_export_components(p_label, "../../components/temp.csv");
-        p_graph->hkuspace_export_malicious("../../malicious/temp.csv");
+        p_graph->hkuspace_export_malicious(p_label, "../../malicious/temp.csv");
         p_loss = p_graph->get_final_pkt_score(p_label);
         // p_graph->print_final_pkt_score(p_parse_result, p_label);
 
@@ -206,7 +206,6 @@ public:
     void start(void) {
         __START_FTIMMER__
 
-        std::string export_name = "hkuspace.csv";
         if (jin_main.count("use_pcap")) {
             useBenignBackground();
             const auto p_packet_parser = make_shared<pcap_parser>(jin_main["use_pcap"]);

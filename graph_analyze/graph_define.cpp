@@ -132,7 +132,7 @@ void coutIP(pkt_addr6_t ip) {
 }
 
 
-void traffic_graph::hkuspace_export_malicious(const std::string & filename) {
+void traffic_graph::hkuspace_export_malicious(const shared_ptr<binary_label_t> p_label, const std::string & filename) {
     std::ofstream file(filename, std::ios::out);
     if (!file.is_open()) {
         std::cerr << "Error opening file for writing!" << std::endl;
@@ -140,7 +140,7 @@ void traffic_graph::hkuspace_export_malicious(const std::string & filename) {
     }
 
     // Write CSV header
-    file << "SrcAddr,DstAddr,Loss\n";
+    file << "SrcAddr,DstAddr,Label,Loss\n";
 
     std::unordered_map<std::string, double_t> highest_loss_map;
     for (size_t i = 0; i < p_long_edge->size(); ++ i) {
@@ -148,6 +148,13 @@ void traffic_graph::hkuspace_export_malicious(const std::string & filename) {
         if (res > 7) {
             const auto ref = p_long_edge->at(i)->get_raw_flow();
             auto p_rep = ref->get_p_packet_p_seq()->at(0);
+            int label = 1;
+            for (const auto index : *ref->get_p_reverse_id()) {
+                if (!p_label->at(index)) {
+                    label = 0;
+                    break;
+                }
+            }
             std::string src, dst;
             if (typeid(*p_rep) == typeid(basic_packet4)) {
                 auto flow_id = dynamic_pointer_cast<basic_packet4>(p_rep)->flow_id;
@@ -158,7 +165,7 @@ void traffic_graph::hkuspace_export_malicious(const std::string & filename) {
                 src = uint128_2_string(tuple_get_src_addr(flow_id));
                 dst = uint128_2_string(tuple_get_dst_addr(flow_id));
             }
-            std::string key = src + "," + dst;
+            std::string key = src + "," + dst + "," + std::to_string(label);
             if (highest_loss_map.find(key) == highest_loss_map.end() || highest_loss_map[key] < res) {
                 highest_loss_map[key] = res;
             }
@@ -170,6 +177,15 @@ void traffic_graph::hkuspace_export_malicious(const std::string & filename) {
         if (res > 1) {
             const auto ref = p_short_edge->at(i)->get_flow_index(0);
             auto p_rep = ref->get_p_packet_p_seq()->at(0);
+            int label = 1;
+            for (size_t j = 0; j < p_short_edge->at(i)->get_agg_size(); j++) {
+                for (const auto index : *p_short_edge->at(i)->get_flow_index(j)->get_p_reverse_id()) {
+                    if (!p_label->at(index)) {
+                        label = 0;
+                        break;
+                    }
+                }
+            }
             std::string src, dst;
             if (typeid(*p_rep) == typeid(basic_packet4)) {
                 auto flow_id = dynamic_pointer_cast<basic_packet4>(p_rep)->flow_id;
@@ -180,7 +196,7 @@ void traffic_graph::hkuspace_export_malicious(const std::string & filename) {
                 src = uint128_2_string(tuple_get_src_addr(flow_id));
                 dst = uint128_2_string(tuple_get_dst_addr(flow_id));
             }
-            std::string key = src + "," + dst;
+            std::string key = src + "," + dst + "," + std::to_string(label);
             if (highest_loss_map.find(key) == highest_loss_map.end() || highest_loss_map[key] < res) {
                 highest_loss_map[key] = res;
             }
