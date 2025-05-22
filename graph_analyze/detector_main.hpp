@@ -13,6 +13,7 @@
 #else
 #include <pcapplusplus/IPLayer.h>
 #endif
+#include <mutex>
 
 
 namespace Hypervision
@@ -96,29 +97,27 @@ namespace Hypervision
         return make_shared<basic_packet4>(s4, d4, s_port, d_port, packet_time, packet_code, packet_length);
     }
 
-struct PacketProcessingContext {
-    shared_ptr<vector<shared_ptr<basic_packet>>> p_parse_result;
-    shared_ptr<binary_label_t> p_label;
-
-    PacketProcessingContext(shared_ptr<vector<shared_ptr<basic_packet>>> parseResult, 
-                            shared_ptr<binary_label_t> label)
-        : p_parse_result(parseResult), p_label(label) {}
-};
+    std::mutex bufferMutex;
 
     bool onPacketArrives(pcpp::RawPacket* packet, pcpp::PcapLiveDevice* dev, void* cookie) {
-        auto detector = static_cast<PacketProcessingContext*>(cookie);
-        auto p_parse_result = detector->p_parse_result;
-        auto p_label = detector->p_label;
+        std::lock_guard<std::mutex> lock(bufferMutex);
+        auto p_live_buffer = *static_cast<shared_ptr<vector<shared_ptr<basic_packet> > >*>(cookie);
         auto p = parsePacket(packet);
         if (p == nullptr) {
             return false;
         }
-        p_parse_result->push_back(p);
-        p_label->push_back(true);
-        if (p_parse_result->size() >= 10000000) {
-            p_parse_result->erase(p_parse_result->begin() + 5000000, p_parse_result->begin() + 7500000);
-            p_label->erase(p_label->begin() + 5000000, p_label->begin() + 7500000);
+        p_live_buffer->push_back(p);
+        auto flow_id = dynamic_pointer_cast<basic_packet4>(p)->flow_id;
+        if (tuple_get_src_addr(flow_id) == 50375178) {
+            return false;
         }
+        if (tuple_get_dst_addr(flow_id) == 50375178) {
+            return false;
+        }
+        // coutIP(tuple_get_src_addr(flow_id));
+        // std::cout << " -> ";
+        // coutIP(tuple_get_dst_addr(flow_id));
+        // std::cout << " " << dynamic_pointer_cast<basic_packet4>(p)->get_pkt_str(0);
         return false;
     }
 
@@ -129,6 +128,7 @@ private:
     json jin_main;
     string file_path = "";
     
+    shared_ptr<vector<shared_ptr<basic_packet> > > p_live_buffer;
     shared_ptr<vector<shared_ptr<basic_packet> > > p_parse_result;
     
     shared_ptr<binary_label_t> p_label;
@@ -153,13 +153,13 @@ public:
         p_dataset_constructor->import_dataset();
         auto label = p_dataset_constructor->get_label();
         auto result = p_dataset_constructor->get_raw_pkt();
-        for (int i = 0; i < 5000000; i++) {
-            if (!label->at(i)) {
+        for (int i = 0; i < 10000000; i++) {
+            if (!label->at(i) || true) {
                 p_parse_result->push_back(result->at(i));
                 p_label->push_back(label->at(i));
             }
         }
-        std::cout << "Using " << 5000000 << " benign background" << std::endl;
+        std::cout << "Using " << p_label->size() << " benign background" << std::endl;
     }
 
     void analyze() {
@@ -219,6 +219,7 @@ public:
             std::cout << "Parsed " << result->size() << " malicious packets" << std::endl;
         } else if (jin_main.count("live_capture_device_by_ip")) {
             useBenignBackground();
+            p_live_buffer = make_shared<decltype(p_live_buffer)::element_type>();
             std::string interfaceIPAddr = jin_main["live_capture_device_by_ip"];
             auto* dev = pcpp::PcapLiveDeviceList::getInstance().getPcapLiveDeviceByIp(interfaceIPAddr);
             if (dev == nullptr) {
@@ -235,19 +236,17 @@ public:
                 std::cerr << "!dev->open()" << std::endl;
                 return;
             }
+            if (!dev->startCapture(onPacketArrives, &p_live_buffer)) {
+                std::cerr << "!dev->startCapture(onPacketArrives, &p_live_buffer)" << std::endl;
+                return;
+            }
             std::cout << "Start capturing..." << std::endl;
             while (true) {
-                auto c = PacketProcessingContext(p_parse_result, p_label);
-                int x = dev->startCaptureBlockingMode(onPacketArrives, &c, 10);
-                if (x < 0) {
-                    // std::cout << "timeout at " << p_parse_result->size() << " packets" << std::endl;
-                } else if (x > 0) {
-                    // std::cout << "limit reached at " << p_parse_result->size() << " packets" << std::endl;
-                } else {
-                    std::cout << "error at " << p_parse_result->size() << " packets" << std::endl;
-                    break;
-                }
-                std::cout << "Captured " << p_parse_result->size() << " packets" << std::endl;
+                std::unique_lock<std::mutex> lock(bufferMutex);
+                p_parse_result->insert(p_parse_result->end(), p_live_buffer->begin(), p_live_buffer->end());
+                p_live_buffer->clear();
+                lock.unlock();
+                std::cout << "Analyze " << p_parse_result->size() << " packets" << std::endl;
                 analyze();
                 std::rename("../../components/temp.csv", "../../components/livecapture.csv");
                 std::rename("../../malicious/temp.csv", "../../malicious/livecapture.csv");

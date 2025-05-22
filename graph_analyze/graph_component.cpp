@@ -89,13 +89,13 @@ void traffic_graph::hkuspace_export_components(const shared_ptr<binary_label_t> 
     }
 
     // Write CSV header
-    file << "ComponentID,Selected,NumVertices,MaliciousCount,LongEdges,ShortEdges,ShortAggEdges,BytesLong,BytesShort\n";
+    file << "ComponentID,Selected,NumVertices,LivePacketsCount,MaliciousCount,LongEdges,ShortEdges,ShortAggEdges,BytesLong,BytesShort\n";
 
     // Iterate over components
     int missed_malicious_packets = 0;
     for (size_t i = 0; i < components->size(); ++i) {
         const auto& comp = (*components)[i];
-        size_t malicious_packets = 0, total_packets = 0;
+        size_t malicious_packets = 0, total_packets = 0, live_packets = 0;
 
         // Track flows associated with component addresses
         std::unordered_set<shared_ptr<basic_flow>> relevant_flows;
@@ -151,6 +151,8 @@ void traffic_graph::hkuspace_export_components(const shared_ptr<binary_label_t> 
                     if (p_label->at(packet_idx)) {
                         malicious_packets++;
                     }
+                } else {
+                    live_packets++;
                 }
             }
         }
@@ -171,7 +173,7 @@ void traffic_graph::hkuspace_export_components(const shared_ptr<binary_label_t> 
             missed_malicious_packets += malicious_packets;
         }
         // Write component data to CSV
-        file << i << "," << selected << "," << comp.size() << "," << malicious_packets << ",";
+        file << i << "," << selected << "," << comp.size() << "," << live_packets << "," << malicious_packets << ",";
         feature_t features = _f_extract_feature_component(comp);
 
         // Write component data to CSV

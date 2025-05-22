@@ -71,7 +71,7 @@ auto traffic_graph::get_final_pkt_score(const shared_ptr<binary_label_t> p_label
         const auto ref = p_long_edge->at(i)->get_raw_flow();
         for (const auto index: *ref->get_p_reverse_id()) {
             const auto res = p_long_edge_score->at(i) + offset_l;
-            if (res > p_pkt_score->at(index)) {
+            if (index < p_pkt_score->size() && res > p_pkt_score->at(index)) {
                 p_pkt_score->at(index) = res;
             }
         }
@@ -82,7 +82,7 @@ auto traffic_graph::get_final_pkt_score(const shared_ptr<binary_label_t> p_label
             const auto ref = p_short_edge->at(i)->get_flow_index(j);
             for (const auto index: * ref->get_p_reverse_id()) {
                 const auto res = p_short_edge_score->at(i) + offset_s;
-                if (res > p_pkt_score->at(index)) {
+                if (index < p_pkt_score->size() && res > p_pkt_score->at(index)) {
                     p_pkt_score->at(index) = res;
                 }
             }
@@ -148,11 +148,14 @@ void traffic_graph::hkuspace_export_malicious(const shared_ptr<binary_label_t> p
         if (res > 7) {
             const auto ref = p_long_edge->at(i)->get_raw_flow();
             auto p_rep = ref->get_p_packet_p_seq()->at(0);
-            int label = 1;
+            int label = -1;
             for (const auto index : *ref->get_p_reverse_id()) {
-                if (!p_label->at(index)) {
+                if (index < p_label->size() && !p_label->at(index)) {
                     label = 0;
                     break;
+                }
+                if (index < p_label->size() && p_label->at(index)) {
+                    label = 1;
                 }
             }
             std::string src, dst;
@@ -177,12 +180,15 @@ void traffic_graph::hkuspace_export_malicious(const shared_ptr<binary_label_t> p
         if (res > 1) {
             const auto ref = p_short_edge->at(i)->get_flow_index(0);
             auto p_rep = ref->get_p_packet_p_seq()->at(0);
-            int label = 1;
+            int label = -1;
             for (size_t j = 0; j < p_short_edge->at(i)->get_agg_size(); j++) {
                 for (const auto index : *p_short_edge->at(i)->get_flow_index(j)->get_p_reverse_id()) {
-                    if (!p_label->at(index)) {
+                    if (index < p_label->size() && !p_label->at(index)) {
                         label = 0;
                         break;
+                    }
+                    if (index < p_label->size() && p_label->at(index)) {
+                        label = 1;
                     }
                 }
             }
@@ -216,7 +222,7 @@ void traffic_graph::print_final_pkt_score(shared_ptr<vector<shared_ptr<basic_pac
         if (res > 7) {
             const auto ref = p_long_edge->at(i)->get_raw_flow();
             const auto index = ref->get_p_reverse_id()->at(0);
-            if (!p_label->at(index)) {
+            if (index < p_label->size() && !p_label->at(index)) {
                 std::cout << "wrong[" << index << "]: ";
             } else {
                 std::cout << "correct[" << index << "]: ";
@@ -243,7 +249,7 @@ void traffic_graph::print_final_pkt_score(shared_ptr<vector<shared_ptr<basic_pac
         if (res > 1) {
             const auto ref = p_short_edge->at(i)->get_flow_index(0);
             const auto index = ref->get_p_reverse_id()->at(0);
-            if (!p_label->at(index)) {
+            if (index < p_label->size() && !p_label->at(index)) {
                 std::cout << "wrong[" << index << "]: ";
             } else {
                 std::cout << "correct[" << index << "]: ";
