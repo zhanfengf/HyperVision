@@ -133,6 +133,7 @@ void coutIP(pkt_addr6_t ip) {
 
 
 void traffic_graph::hkuspace_export_malicious(const shared_ptr<binary_label_t> p_label, const std::string & filename) {
+    __START_FTIMMER__
     std::ofstream file(filename, std::ios::out);
     if (!file.is_open()) {
         std::cerr << "Error opening file for writing!" << std::endl;
@@ -212,6 +213,8 @@ void traffic_graph::hkuspace_export_malicious(const shared_ptr<binary_label_t> p
         file << key << "," << loss << std::endl;
     }
     file.close();
+    __STOP_FTIMER__
+    __PRINTF_EXE_TIME__
 }
 
 

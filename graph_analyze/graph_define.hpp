@@ -66,7 +66,6 @@ private:
     double_t offset_l = 0.0, offset_s = 0.0;
 
 public:
-
     traffic_graph(const decltype(p_short_edge) p_short_edge, const decltype(p_long_edge) p_long_edge):
         p_short_edge(p_short_edge), p_long_edge(p_long_edge) {}
 
@@ -100,6 +99,8 @@ public:
 
 
     using component = vector<vector<addr_t> >;
+    shared_ptr<component> hkuspace_components;
+    shared_ptr<vector<size_t>> hkuspace_selected_components;
     auto connected_component() const -> shared_ptr<component>;
     void hkuspace_export_components(const shared_ptr<binary_label_t> p_label,
                                     const std::string & filename);

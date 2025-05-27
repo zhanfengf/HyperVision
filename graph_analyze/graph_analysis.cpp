@@ -51,4 +51,6 @@ auto traffic_graph::proc_components(const shared_ptr<component> p_com) -> void {
 
     __STOP_FTIMER__
     __PRINTF_EXE_TIME__
+    hkuspace_components = p_com;
+    hkuspace_selected_components = p_select;
 }

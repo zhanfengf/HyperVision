@@ -99,12 +99,62 @@ namespace Hypervision
 
     std::mutex bufferMutex;
 
+    int hkuspace_read_label(pcpp::RawPacket* rawPacket) {
+        if (!rawPacket) return -1;
+
+        // Parse the raw packet
+        pcpp::Packet parsedPacket(rawPacket);
+
+        // Check for TCP layer
+        pcpp::TcpLayer* tcpLayer = parsedPacket.getLayerOfType<pcpp::TcpLayer>();
+        if (tcpLayer) {
+            const uint8_t* payload = tcpLayer->getLayerPayload();
+            size_t payloadSize = tcpLayer->getLayerPayloadSize();
+            if ((payloadSize >= 15) && (memcmp(payload, "hkuspace benign", 15) == 0)) {
+                return 0;
+            }
+            if ((payloadSize >= 18) && (memcmp(payload, "hkuspace malicious", 18) == 0)) {
+                return 1;
+            }
+        }
+
+        // Check for UDP layer
+        pcpp::UdpLayer* udpLayer = parsedPacket.getLayerOfType<pcpp::UdpLayer>();
+        if (udpLayer) {
+            const uint8_t* payload = udpLayer->getLayerPayload();
+            size_t payloadSize = udpLayer->getLayerPayloadSize();
+            if ((payloadSize >= 15) && (memcmp(payload, "hkuspace benign", 15) == 0)) {
+                return 0;
+            }
+            if ((payloadSize >= 18) && (memcmp(payload, "hkuspace malicious", 18) == 0)) {
+                return 1;
+            }
+        }
+        return -1;
+    }
+
+    struct PacketProcessingContext {
+        shared_ptr<vector<shared_ptr<basic_packet>>> p_live_buffer;
+        shared_ptr<binary_label_t> p_live_label;
+
+        PacketProcessingContext(shared_ptr<vector<shared_ptr<basic_packet>>> buffer, 
+                                shared_ptr<binary_label_t> label)
+            : p_live_buffer(buffer), p_live_label(label) {}
+    };
+
     bool onPacketArrives(pcpp::RawPacket* packet, pcpp::PcapLiveDevice* dev, void* cookie) {
         std::lock_guard<std::mutex> lock(bufferMutex);
-        auto p_live_buffer = *static_cast<shared_ptr<vector<shared_ptr<basic_packet> > >*>(cookie);
+        auto detector = static_cast<PacketProcessingContext*>(cookie);
+        auto p_live_buffer = detector->p_live_buffer;
+        auto p_live_label = detector->p_live_label;
+
+        int label = hkuspace_read_label(packet);
         auto p = parsePacket(packet);
         if (p == nullptr) {
             return false;
+        }
+        if (label != -1 && p_live_label->size() == p_live_buffer->size()) {
+            p_live_label->push_back(label);
         }
         p_live_buffer->push_back(p);
         auto flow_id = dynamic_pointer_cast<basic_packet4>(p)->flow_id;
@@ -131,6 +181,7 @@ private:
     shared_ptr<vector<shared_ptr<basic_packet> > > p_live_buffer;
     shared_ptr<vector<shared_ptr<basic_packet> > > p_parse_result;
     
+    shared_ptr<binary_label_t> p_live_label;
     shared_ptr<binary_label_t> p_label;
     shared_ptr<vector<double_t> > p_loss;
     
@@ -153,8 +204,8 @@ public:
         p_dataset_constructor->import_dataset();
         auto label = p_dataset_constructor->get_label();
         auto result = p_dataset_constructor->get_raw_pkt();
-        for (int i = 0; i < 10000000; i++) {
-            if (!label->at(i) || true) {
+        for (int i = 0; i < 13000000; i++) {
+            if (!label->at(i)) {
                 p_parse_result->push_back(result->at(i));
                 p_label->push_back(label->at(i));
             }
@@ -182,7 +233,7 @@ public:
         p_graph->graph_detect();
         p_graph->hkuspace_export_components(p_label, "../../components/temp.csv");
         p_graph->hkuspace_export_malicious(p_label, "../../malicious/temp.csv");
-        p_loss = p_graph->get_final_pkt_score(p_label);
+        // p_loss = p_graph->get_final_pkt_score(p_label);
         // p_graph->print_final_pkt_score(p_parse_result, p_label);
 
         // std::map<tuple2_conn4, pair<int,double> > m;
@@ -220,6 +271,7 @@ public:
         } else if (jin_main.count("live_capture_device_by_ip")) {
             useBenignBackground();
             p_live_buffer = make_shared<decltype(p_live_buffer)::element_type>();
+            p_live_label = make_shared<decltype(p_live_label)::element_type>();
             std::string interfaceIPAddr = jin_main["live_capture_device_by_ip"];
             auto* dev = pcpp::PcapLiveDeviceList::getInstance().getPcapLiveDeviceByIp(interfaceIPAddr);
             if (dev == nullptr) {
@@ -236,16 +288,24 @@ public:
                 std::cerr << "!dev->open()" << std::endl;
                 return;
             }
-            if (!dev->startCapture(onPacketArrives, &p_live_buffer)) {
+            auto c = PacketProcessingContext(p_live_buffer, p_live_label);
+            if (!dev->startCapture(onPacketArrives, &c)) {
                 std::cerr << "!dev->startCapture(onPacketArrives, &p_live_buffer)" << std::endl;
                 return;
             }
             std::cout << "Start capturing..." << std::endl;
             while (true) {
                 std::unique_lock<std::mutex> lock(bufferMutex);
+                if (p_live_buffer->size() == p_live_label->size()) {
+                    p_label->insert(p_label->end(), p_live_label->begin(), p_live_label->end());
+                    p_live_label->clear();
+                }
                 p_parse_result->insert(p_parse_result->end(), p_live_buffer->begin(), p_live_buffer->end());
                 p_live_buffer->clear();
                 lock.unlock();
+                if (p_parse_result->size() < 100000) {
+                    continue;
+                }
                 std::cout << "Analyze " << p_parse_result->size() << " packets" << std::endl;
                 analyze();
                 std::rename("../../components/temp.csv", "../../components/livecapture.csv");
