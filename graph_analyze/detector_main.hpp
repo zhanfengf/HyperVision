@@ -158,12 +158,12 @@ namespace Hypervision
         }
         p_live_buffer->push_back(p);
         auto flow_id = dynamic_pointer_cast<basic_packet4>(p)->flow_id;
-        if (tuple_get_src_addr(flow_id) == 50375178) {
-            return false;
-        }
-        if (tuple_get_dst_addr(flow_id) == 50375178) {
-            return false;
-        }
+        // if (tuple_get_src_addr(flow_id) == 50375178) {
+        //     return false;
+        // }
+        // if (tuple_get_dst_addr(flow_id) == 50375178) {
+        //     return false;
+        // }
         // coutIP(tuple_get_src_addr(flow_id));
         // std::cout << " -> ";
         // coutIP(tuple_get_dst_addr(flow_id));
@@ -204,13 +204,20 @@ public:
         p_dataset_constructor->import_dataset();
         auto label = p_dataset_constructor->get_label();
         auto result = p_dataset_constructor->get_raw_pkt();
-        for (int i = 0; i < 13000000; i++) {
+	int benign = 0;
+	int malicious = 0;
+        for (int i = 0; i < 10000000; i++) {
             if (!label->at(i)) {
                 p_parse_result->push_back(result->at(i));
                 p_label->push_back(label->at(i));
             }
+	    if (label->at(i)) {
+		malicious++;
+	    } else {
+		benign++;
+	    }
         }
-        std::cout << "Using " << p_label->size() << " benign background" << std::endl;
+        std::cout << "Using " << benign << " benign " << malicious << " malicious background" << std::endl;
     }
 
     void analyze() {
@@ -302,6 +309,14 @@ public:
                 }
                 p_parse_result->insert(p_parse_result->end(), p_live_buffer->begin(), p_live_buffer->end());
                 p_live_buffer->clear();
+		if (p_parse_result->size() > 13000000) {
+			p_parse_result->erase(p_parse_result->begin(), p_parse_result->begin() + 1000000);
+			if (p_label->size() < 1000000) {
+				p_label->clear();
+			} else {
+				p_label->erase(p_label->begin(), p_label->begin() + 1000000);
+			}
+		}
                 lock.unlock();
                 if (p_parse_result->size() < 100000) {
                     continue;
